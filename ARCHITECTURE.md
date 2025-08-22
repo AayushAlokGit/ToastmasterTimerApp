@@ -86,6 +86,7 @@ The Toastmaster Timer App is a modular Python console application designed for t
 The timer system operates on a sophisticated multi-threaded architecture that separates timing logic from display updates for precise and responsive operation.
 
 #### 1. **Timer Initialization**
+
 ```python
 # User selects speech type → Timer starts
 TimerController.start_speech_timer(SpeechType.ICE_BREAKER)
@@ -96,6 +97,7 @@ Creates background daemon thread → _timer_worker()
 ```
 
 #### 2. **Background Timer Thread Operations**
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                Background Timer Thread                      │
@@ -111,6 +113,7 @@ Creates background daemon thread → _timer_worker()
 ```
 
 #### 3. **Color Determination Logic**
+
 ```python
 # Precise timing logic
 for timing_seconds, color in config['timings']:
@@ -120,17 +123,18 @@ for timing_seconds, color in config['timings']:
 # Example for Ice Breaker:
 # 0-239s:   BLANK
 # 240-299s: GREEN  (4:00-4:59)
-# 300-359s: YELLOW (5:00-5:59) 
+# 300-359s: YELLOW (5:00-5:59)
 # 360s+:    RED    (6:00+)
 ```
 
 #### 4. **Grace Period Management**
+
 ```python
 # Grace period state tracking
 if elapsed >= red_time and not grace_period_started:
     grace_period_started = True
     show_notification("Grace Period Started")
-    
+
 if elapsed >= grace_end_time and not grace_period_ended:
     grace_period_ended = True
     show_notification("Grace Period Over - Disqualified")
@@ -141,6 +145,7 @@ if elapsed >= grace_end_time and not grace_period_ended:
 The display system provides real-time visual feedback through terminal manipulation and color changes.
 
 #### 1. **Terminal Color Control**
+
 ```python
 # Windows PowerShell color commands
 DisplayManager.set_background_color(TimerColor.GREEN)
@@ -151,6 +156,7 @@ Terminal background changes immediately
 ```
 
 #### 2. **Screen Refresh Cycle**
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │              Display Update Cycle (1 second)               │
@@ -165,6 +171,7 @@ Terminal background changes immediately
 ```
 
 #### 3. **Dynamic Display Content**
+
 ```
 ╔═════════════════════════════════════════════════════════════╗
 ║  TOASTMASTER TIMER - ICE BREAKER SPEECH                    ║
@@ -188,6 +195,7 @@ Terminal background changes immediately
 ### Real-Time State Synchronization
 
 #### 1. **Thread Communication**
+
 ```
 Main Thread                    Background Timer Thread
      │                              │
@@ -199,22 +207,24 @@ Main Thread                    Background Timer Thread
 ```
 
 #### 2. **State Variables**
+
 ```python
 class TimerEngine:
     # Timing state
     timer_running: bool = False          # Control flag
     start_time: float = None            # Precise start timestamp
     current_color: TimerColor = BLANK   # Current display color
-    
+
     # Grace period tracking
     grace_period_started: bool = False  # First grace notification
     grace_period_ended: bool = False    # Final disqualification
-    
+
     # Thread management
     timer_thread: Thread = None         # Background worker
 ```
 
 #### 3. **Precision Timing**
+
 ```python
 # High-precision timing calculation
 elapsed = int(time.time() - self.start_time)
@@ -229,11 +239,13 @@ elapsed = int(time.time() - self.start_time)
 ### Display Responsiveness Features
 
 #### 1. **Immediate Visual Feedback**
+
 - **Color Changes**: Instant terminal background updates
 - **Status Updates**: Real-time grace period countdown
 - **Progress Indicators**: Dynamic ✓ marks for passed milestones
 
 #### 2. **Grace Period Notifications**
+
 ```python
 # 2-second modal notifications
 def show_grace_period_notification(type):
@@ -248,6 +260,7 @@ def show_grace_period_notification(type):
 ```
 
 #### 3. **User Interaction Handling**
+
 ```python
 # Non-blocking input handling
 while timer_running:
@@ -263,16 +276,19 @@ while timer_running:
 ### Performance Optimizations
 
 #### 1. **Efficient Display Updates**
+
 - **Conditional Rendering**: Only updates when state changes
 - **Minimal Redraws**: Smart screen clearing and redrawing
 - **Buffered Output**: Single write operation per update cycle
 
 #### 2. **Memory Efficiency**
+
 - **No Display History**: Previous frames are not stored
 - **Calculated Values**: Time formatting done on-demand
 - **Static Resources**: Color codes and formatting strings are constants
 
 #### 3. **CPU Usage Optimization**
+
 ```python
 # Balanced update frequency
 time.sleep(1)  # 1-second updates provide:
@@ -284,6 +300,7 @@ time.sleep(1)  # 1-second updates provide:
 ### Error Recovery Mechanisms
 
 #### 1. **Display Failure Recovery**
+
 ```python
 try:
     DisplayManager.show_timer_info(...)
@@ -293,6 +310,7 @@ except Exception:
 ```
 
 #### 2. **Terminal Color Fallback**
+
 ```python
 try:
     os.system('color 02')  # Set green background
@@ -302,6 +320,7 @@ except Exception:
 ```
 
 #### 3. **Threading Error Isolation**
+
 ```python
 # Daemon thread ensures clean shutdown
 timer_thread.daemon = True
@@ -459,27 +478,87 @@ This architecture ensures reliable, responsive, and visually appealing timer ope
                             │              │ Timer Thread│
                             │              └─────────────┘
                             │                      │
+                            │                      ▼
+                    ┌───────┴──────┐    ┌──────────────┐
+                    │ Grace Period │    │ Color Changes│
+                    │ Notifications│    │ & Updates    │
+                    └──────────────┘    └──────────────┘
+```
+
+### Detailed Timer Execution Sequence
+
+```
+User Action → Timer Start → Background Thread → Display Loop
+    │              │               │                 │
+    │              │               │                 ▼
+    │              │               │         ┌────────────────┐
+    │              │               │         │  Every Second: │
+    │              │               │         │  1. Get time   │
+    │              │               │         │  2. Check color│
+    │              │               │         │  3. Check grace│
+    │              │               │         │  4. Update UI  │
+    │              │               │         └────────────────┘
+    │              │               │                 │
+    │              │               │                 ▼
+    │              │               │         ┌────────────────┐
+    │              │               │         │ Color Decision │
+    │              │               │         │ ├─ BLANK (0s)  │
+    │              │               │         │ ├─ GREEN (4m)  │
+    │              │               │         │ ├─ YELLOW (5m) │
+    │              │               │         │ └─ RED (6m+)   │
+    │              │               │         └────────────────┘
+    │              │               │                 │
+    │              │               │                 ▼
+    │              │               │         ┌────────────────┐
+    │              │               │         │ Grace Tracking │
+    │              │               │         │ ├─ Not started │
+    │              │               │         │ ├─ Active (🟠) │
+    │              │               │         │ └─ Over (⚠️)   │
+    │              │               │         └────────────────┘
+    │              │               │                 │
+    │              │               │                 ▼
+    │              │               └─────────▶ ┌────────────────┐
+    │              │                         │ Terminal Output│
+    │              │                         │ ├─ Clear screen │
+    │              │                         │ ├─ Set colors  │
+    │              │                         │ ├─ Show timer  │
+    │              │                         │ └─ Show status │
+    │              │                         └────────────────┘
+    │              │                                 │
+    │              └─────────────────────────────────┘
+    │                              │
+    ▼                              ▼
+┌─────────────┐              ┌────────────────┐
+│ Ctrl+C      │─────────────▶│ Stop Timer &   │
+│ Interrupt   │              │ Record Speech  │
+└─────────────┘              └────────────────┘
+```
+
+                            │                      │
                     ┌───────┴──────┐              ▼
                     │ Grace Period │    ┌──────────────┐
                     │ Notifications│    │ Color Changes│
                     └──────────────┘    │ & Updates    │
                                         └──────────────┘
+
 ```
 
 ### Data Persistence Flow
 
 ```
-┌─────────────┐    ┌─────────────────┐    ┌──────────────┐
-│ Speech      │───▶│ Record Manager  │───▶│ JSON File    │
-│ Completion  │    │                 │    │ Storage      │
-└─────────────┘    └─────────────────┘    └──────────────┘
-                            │                      │
-                            │                      │
-                            ▼                      ▼
-┌─────────────┐    ┌─────────────────┐    ┌──────────────┐
-│ Record      │◀───│ SpeechRecord    │◀───│ Data Loading │
-│ Display     │    │ Objects         │    │              │
-└─────────────┘    └─────────────────┘    └──────────────┘
+
+┌─────────────┐ ┌─────────────────┐ ┌──────────────┐
+│ Speech │───▶│ Record Manager │───▶│ JSON File │
+│ Completion │ │ │ │ Storage │
+└─────────────┘ └─────────────────┘ └──────────────┘
+│ │
+│ │
+▼ ▼
+┌─────────────┐ ┌─────────────────┐ ┌──────────────┐
+│ Record │◀───│ SpeechRecord │◀───│ Data Loading │
+│ Display │ │ Objects │ │ │
+└─────────────┘ └─────────────────┘ └──────────────┘
+
 ```
 
 ## Class Diagrams
@@ -487,107 +566,113 @@ This architecture ensures reliable, responsive, and visually appealing timer ope
 ### Core Domain Classes
 
 ```
+
 ┌─────────────────────────────┐
-│     <<enumeration>>         │
-│     SpeechType              │
+│ <<enumeration>> │
+│ SpeechType │
 ├─────────────────────────────┤
-│ + ICE_BREAKER               │
-│ + USUAL_SPEECH              │
-│ + EVALUATION                │
-│ + TABLE_TOPIC               │
-│ + TEST                      │
+│ + ICE_BREAKER │
+│ + USUAL_SPEECH │
+│ + EVALUATION │
+│ + TABLE_TOPIC │
+│ + TEST │
 └─────────────────────────────┘
 
 ┌─────────────────────────────┐
-│     <<enumeration>>         │
-│     TimerColor              │
+│ <<enumeration>> │
+│ TimerColor │
 ├─────────────────────────────┤
-│ + BLANK                     │
-│ + GREEN                     │
-│ + YELLOW                    │
-│ + RED                       │
+│ + BLANK │
+│ + GREEN │
+│ + YELLOW │
+│ + RED │
 └─────────────────────────────┘
 
 ┌─────────────────────────────────────────┐
-│            SpeechConfig                 │
+│ SpeechConfig │
 ├─────────────────────────────────────────┤
-│ + SPEECH_CONFIGS: Dict                  │
+│ + SPEECH_CONFIGS: Dict │
 ├─────────────────────────────────────────┤
-│ + get_config(type) → Dict               │
-│ + get_all_configs() → Dict              │
-│ + get_red_time(type) → int              │
-│ + get_grace_end_time(type) → int        │
+│ + get_config(type) → Dict │
+│ + get_all_configs() → Dict │
+│ + get_red_time(type) → int │
+│ + get_grace_end_time(type) → int │
 └─────────────────────────────────────────┘
+
 ```
 
 ### Timer Architecture
 
 ```
+
 ┌─────────────────────────────────────────┐
-│           TimerEngine                   │
+│ TimerEngine │
 ├─────────────────────────────────────────┤
-│ - current_speech_type: SpeechType       │
-│ - timer_running: bool                   │
-│ - start_time: float                     │
-│ - current_color: TimerColor             │
-│ - grace_period_started: bool            │
-│ - grace_period_ended: bool              │
+│ - current_speech_type: SpeechType │
+│ - timer_running: bool │
+│ - start_time: float │
+│ - current_color: TimerColor │
+│ - grace_period_started: bool │
+│ - grace_period_ended: bool │
 ├─────────────────────────────────────────┤
-│ + start_timer(type)                     │
-│ + stop_timer() → int                    │
-│ + get_elapsed_time() → int              │
-│ + is_running() → bool                   │
-│ - _timer_worker()                       │
-│ - _handle_grace_period_notifications()  │
+│ + start_timer(type) │
+│ + stop_timer() → int │
+│ + get_elapsed_time() → int │
+│ + is_running() → bool │
+│ - \_timer_worker() │
+│ - \_handle_grace_period_notifications() │
 └─────────────────────────────────────────┘
-                    │
-                    │ composition
-                    ▼
+│
+│ composition
+▼
 ┌─────────────────────────────────────────┐
-│         TimerController                 │
+│ TimerController │
 ├─────────────────────────────────────────┤
-│ - engine: TimerEngine                   │
+│ - engine: TimerEngine │
 ├─────────────────────────────────────────┤
-│ + start_speech_timer(type) → bool       │
-│ + stop_speech_timer() → int             │
-│ + is_timer_running() → bool             │
-│ + get_timer_status() → dict             │
-│ + wait_for_timer_completion()           │
+│ + start_speech_timer(type) → bool │
+│ + stop_speech_timer() → int │
+│ + is_timer_running() → bool │
+│ + get_timer_status() → dict │
+│ + wait_for_timer_completion() │
 └─────────────────────────────────────────┘
+
 ```
 
 ### Record Management
 
 ```
+
 ┌─────────────────────────────────────────┐
-│           SpeechRecord                  │
+│ SpeechRecord │
 ├─────────────────────────────────────────┤
-│ + timestamp: str                        │
-│ + speech_type: str                      │
-│ + speaker_name: str                     │
-│ + duration_seconds: int                 │
-│ + duration_formatted: str               │
+│ + timestamp: str │
+│ + speech_type: str │
+│ + speaker_name: str │
+│ + duration_seconds: int │
+│ + duration_formatted: str │
 ├─────────────────────────────────────────┤
-│ + __init__(type, name, duration)        │
-│ + to_dict() → Dict                      │
-│ + from_dict(data) → SpeechRecord        │
+│ + **init**(type, name, duration) │
+│ + to_dict() → Dict │
+│ + from_dict(data) → SpeechRecord │
 └─────────────────────────────────────────┘
-                    │
-                    │ aggregation
-                    ▼
+│
+│ aggregation
+▼
 ┌─────────────────────────────────────────┐
-│          RecordManager                  │
+│ RecordManager │
 ├─────────────────────────────────────────┤
-│ - filename: str                         │
-│ - records: List[SpeechRecord]           │
+│ - filename: str │
+│ - records: List[SpeechRecord] │
 ├─────────────────────────────────────────┤
-│ + add_record(type, name, duration)      │
-│ + save_records()                        │
-│ + load_records()                        │
-│ + get_all_records() → List              │
-│ + display_records()                     │
-│ + get_records_count() → int             │
+│ + add_record(type, name, duration) │
+│ + save_records() │
+│ + load_records() │
+│ + get_all_records() → List │
+│ + display_records() │
+│ + get_records_count() → int │
 └─────────────────────────────────────────┘
+
 ```
 
 ## Threading Model
@@ -595,27 +680,29 @@ This architecture ensures reliable, responsive, and visually appealing timer ope
 ### Thread Architecture
 
 ```
+
 ┌─────────────────────────────────────────────────────────┐
-│                   Main Thread                           │
+│ Main Thread │
 ├─────────────────────────────────────────────────────────┤
-│ • User interface handling                               │
-│ • Menu navigation                                       │
-│ • Input processing                                      │
-│ • Application flow control                              │
-│ • Exception handling                                    │
+│ • User interface handling │
+│ • Menu navigation │
+│ • Input processing │
+│ • Application flow control │
+│ • Exception handling │
 └─────────────────────────────────────────────────────────┘
-                            │
-                            │ creates
-                            ▼
+│
+│ creates
+▼
 ┌─────────────────────────────────────────────────────────┐
-│                Timer Worker Thread                      │
+│ Timer Worker Thread │
 ├─────────────────────────────────────────────────────────┤
-│ • Background timing operations                          │
-│ • Color change detection                                │
-│ • Grace period monitoring                               │
-│ • Display updates                                       │
-│ • Daemon thread (auto-cleanup)                          │
+│ • Background timing operations │
+│ • Color change detection │
+│ • Grace period monitoring │
+│ • Display updates │
+│ • Daemon thread (auto-cleanup) │
 └─────────────────────────────────────────────────────────┘
+
 ```
 
 ### Thread Communication
@@ -630,37 +717,39 @@ This architecture ensures reliable, responsive, and visually appealing timer ope
 ### Data Persistence Strategy
 
 ```
+
 ┌─────────────────┐
-│   Application   │
-│     Memory      │
-│                 │
-│ SpeechRecord    │
-│   Objects       │
+│ Application │
+│ Memory │
+│ │
+│ SpeechRecord │
+│ Objects │
 └─────────────────┘
-         │
-         │ serialize/deserialize
-         ▼
+│
+│ serialize/deserialize
+▼
 ┌─────────────────┐
-│   JSON Data     │
-│                 │
-│ {               │
-│   "timestamp",  │
-│   "speech_type",│
-│   "speaker",    │
-│   "duration"    │
-│ }               │
+│ JSON Data │
+│ │
+│ { │
+│ "timestamp", │
+│ "speech_type",│
+│ "speaker", │
+│ "duration" │
+│ } │
 └─────────────────┘
-         │
-         │ file I/O
-         ▼
+│
+│ file I/O
+▼
 ┌─────────────────┐
-│  File System    │
-│                 │
-│ speech_records  │
-│    .json        │
-│                 │
+│ File System │
+│ │
+│ speech_records │
+│ .json │
+│ │
 └─────────────────┘
-```
+
+````
 
 ### Data Format
 
@@ -674,7 +763,7 @@ This architecture ensures reliable, responsive, and visually appealing timer ope
     "duration_formatted": "04:45"
   }
 ]
-```
+````
 
 ### Storage Characteristics
 
