@@ -7,10 +7,10 @@ by changing terminal background colors (green, yellow, red) at specified interva
 
 import time
 from typing import Dict
-from speech_types import SpeechType, SpeechConfig
-from timer_engine import TimerController
-from record_manager import RecordManager
-from display_manager import DisplayManager
+from src.speech_types import SpeechType, SpeechConfig, TimerColor
+from src.timer_engine import TimerController
+from src.record_manager import RecordManager
+from src.display_manager import DisplayManager
 
 
 class ToastmasterTimerApp:
@@ -21,7 +21,7 @@ class ToastmasterTimerApp:
         self.record_manager = RecordManager()
         self.speech_type_map = {
             '1': SpeechType.ICE_BREAKER,
-            '2': SpeechType.USUAL_SPEECH,
+            '2': SpeechType.PREPARED,
             '3': SpeechType.EVALUATION,
             '4': SpeechType.TABLE_TOPIC,
             '5': SpeechType.TEST
@@ -29,6 +29,8 @@ class ToastmasterTimerApp:
     
     def run(self):
         """Main application loop"""
+        # Ensure we start with clean terminal colors
+        DisplayManager.set_background_color(TimerColor.BLANK)
         DisplayManager.show_welcome_message()
         
         while True:
@@ -44,6 +46,8 @@ class ToastmasterTimerApp:
     
     def _show_menu_and_handle_choice(self):
         """Show menu and handle user choice"""
+        # Ensure colors are always reset before showing menu
+        DisplayManager.set_background_color(TimerColor.BLANK)
         DisplayManager.show_main_menu()
         choice = input("\nEnter your choice (1-7): ").strip()
         
@@ -100,6 +104,9 @@ class ToastmasterTimerApp:
             else:
                 print("No speaker name provided. Speech not recorded.")
         
+        # Reset terminal colors to default after speech recording
+        DisplayManager.set_background_color(TimerColor.BLANK)
+        
         input("\nPress Enter to continue...")
     
     def _handle_view_records(self):
@@ -121,6 +128,8 @@ class ToastmasterTimerApp:
         """Handle Ctrl+C interrupt"""
         if self.timer_controller.is_timer_running():
             self.timer_controller.stop_speech_timer()
+        # Reset colors on exit
+        DisplayManager.set_background_color(TimerColor.BLANK)
         print("\n\nExiting application...")
     
     def get_app_statistics(self) -> Dict:

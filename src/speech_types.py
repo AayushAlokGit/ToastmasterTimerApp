@@ -9,7 +9,7 @@ from typing import Dict, List, Tuple
 class SpeechType(Enum):
     """Enumeration of different speech types in Toastmaster meetings"""
     ICE_BREAKER = "ice_breaker"
-    USUAL_SPEECH = "usual_speech"
+    PREPARED = "prepared"
     EVALUATION = "evaluation"
     TABLE_TOPIC = "table_topic"
     TEST = "test"
@@ -33,8 +33,8 @@ class SpeechConfig:
             "timings": [(240, TimerColor.GREEN), (300, TimerColor.YELLOW), (360, TimerColor.RED)],
             "grace_period": 30
         },
-        SpeechType.USUAL_SPEECH: {
-            "name": "Usual Speech", 
+        SpeechType.PREPARED: {
+            "name": "Prepared Speech",
             "duration_range": "5-7 minutes",
             "timings": [(300, TimerColor.GREEN), (360, TimerColor.YELLOW), (420, TimerColor.RED)],
             "grace_period": 30
@@ -53,8 +53,8 @@ class SpeechConfig:
         },
         SpeechType.TEST: {
             "name": "Test Speech",
-            "duration_range": "Color changes every 30s",
-            "timings": [(10, TimerColor.GREEN), (20, TimerColor.YELLOW), (30, TimerColor.RED)],
+            "duration_range": "Color changes every 5s",
+            "timings": [(5, TimerColor.GREEN), (10, TimerColor.YELLOW), (15, TimerColor.RED)],
             "grace_period": 10
         }
     }

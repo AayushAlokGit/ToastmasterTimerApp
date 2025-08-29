@@ -5,8 +5,8 @@ Timer functionality for the Toastmaster Timer App
 import time
 import threading
 from typing import Optional, Callable
-from speech_types import SpeechType, TimerColor, SpeechConfig
-from display_manager import DisplayManager
+from .speech_types import SpeechType, TimerColor, SpeechConfig
+from .display_manager import DisplayManager
 
 
 class TimerEngine:

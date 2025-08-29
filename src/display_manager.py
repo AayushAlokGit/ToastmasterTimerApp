@@ -3,7 +3,7 @@ Display utilities for the Toastmaster Timer App
 """
 
 import os
-from speech_types import SpeechType, TimerColor, SpeechConfig
+from .speech_types import SpeechType, TimerColor, SpeechConfig
 
 
 class DisplayManager:
@@ -16,33 +16,45 @@ class DisplayManager:
     
     @staticmethod
     def set_background_color(color: TimerColor):
-        """Set terminal background color based on Windows PowerShell"""
+        """Set terminal background color using Windows cmd color command"""
         if color == TimerColor.BLANK:
-            # Reset to default colors
-            os.system('color')
+            # Reset to default colors - white text on black background
+            os.system('cmd /c "color 07"')
         elif color == TimerColor.GREEN:
             # Black text on green background
-            os.system('color 02')
+            os.system('cmd /c "color 02"')
         elif color == TimerColor.YELLOW:
             # Black text on yellow background  
-            os.system('color 06')
+            os.system('cmd /c "color 06"')
         elif color == TimerColor.RED:
             # White text on red background
-            os.system('color 04')
+            os.system('cmd /c "color 04"')
     
     @staticmethod
     def show_main_menu():
         """Display the main menu"""
+        # Ensure default colors for menu display
+        DisplayManager.set_background_color(TimerColor.BLANK)
         DisplayManager.clear_screen()
         print(f"\n{'='*60}")
         print("  🎤 TOASTMASTER TIMER APPLICATION 🎤")
         print(f"{'='*60}")
         print("\nSelect Speech Type:")
-        print("1. Ice Breaker Speech (4-6 minutes)")
-        print("2. Usual Speech (5-7 minutes)")  
-        print("3. Speech Evaluation (2-3 minutes)")
-        print("4. Table Topic Speech (1-2 minutes)")
-        print("5. Test Speech (Color changes every 30s)")
+        
+        # Dynamically generate menu from SpeechType enum
+        speech_types = [
+            SpeechType.ICE_BREAKER,
+            SpeechType.PREPARED, 
+            SpeechType.EVALUATION,
+            SpeechType.TABLE_TOPIC,
+            SpeechType.TEST
+        ]
+        
+        for i, speech_type in enumerate(speech_types, 1):
+            config = SpeechConfig.get_config(speech_type)
+            if config:
+                print(f"{i}. {config['name']} ({config['duration_range']})")
+        
         print("6. View Speech Records")
         print("7. Exit")
         print(f"\n{'='*60}")

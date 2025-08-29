@@ -6,7 +6,7 @@ import json
 import os
 from datetime import datetime
 from typing import List, Dict
-from speech_types import SpeechType
+from .speech_types import SpeechType
 
 
 class SpeechRecord:
