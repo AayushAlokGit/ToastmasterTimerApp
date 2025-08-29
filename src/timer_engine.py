@@ -4,7 +4,7 @@ Timer functionality for the Toastmaster Timer App
 
 import time
 import threading
-from typing import Optional, Callable
+from typing import Optional
 from .speech_types import SpeechType, TimerColor, SpeechConfig
 from .display_manager import DisplayManager
 
@@ -20,11 +20,6 @@ class TimerEngine:
         self.timer_thread: Optional[threading.Thread] = None
         self.grace_period_started = False
         self.grace_period_ended = False
-        self.on_timer_update: Optional[Callable] = None
-    
-    def set_timer_update_callback(self, callback: Callable):
-        """Set callback function to be called on timer updates"""
-        self.on_timer_update = callback
     
     def start_timer(self, speech_type: SpeechType):
         """Start timing for specified speech type"""
@@ -37,8 +32,6 @@ class TimerEngine:
         
         config = SpeechConfig.get_config(speech_type)
         print(f"\nStarting timer for {config['name']}...")
-        print("Timer will begin in 3 seconds...")
-        time.sleep(3)
         
         self.timer_thread = threading.Thread(target=self._timer_worker)
         self.timer_thread.daemon = True
@@ -102,10 +95,6 @@ class TimerEngine:
             
             # Display timer info
             DisplayManager.show_timer_info(self.current_speech_type, elapsed, self.current_color)
-            
-            # Call update callback if set
-            if self.on_timer_update:
-                self.on_timer_update(elapsed, self.current_color)
             
             time.sleep(1)
     
