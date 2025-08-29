@@ -2,7 +2,7 @@
 
 ## Overview
 
-The RecordManager has been updated to use a file-based approach instead of keeping records in memory. This change improves memory efficiency and ensures immediate data persistence.
+The `src/record_manager.py` module has been updated to use a file-based approach instead of keeping records in memory. This change improves memory efficiency and ensures immediate data persistence.
 
 ## Key Changes Made
 

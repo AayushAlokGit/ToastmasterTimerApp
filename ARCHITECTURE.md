@@ -1,22 +1,21 @@
-# Toastmaster Timer App - Architecture Documentation
+# Toastmaster Timer App - Architecture Documentation v2.1
 
 ## Table of Contents
 
 1. [Overview](#overview)
 2. [System Architecture](#system-architecture)
-3. [Timer Execution & Display Architecture](#timer-execution--display-architecture)
-4. [Module Details](#module-details)
-5. [Data Flow](#data-flow)
-6. [Class Diagrams](#class-diagrams)
-7. [Threading Model](#threading-model)
-8. [Storage Architecture](#storage-architecture)
-9. [Error Handling Strategy](#error-handling-strategy)
+3. [Module Architecture](#module-architecture)
+4. [Data Flow](#data-flow)
+5. [Threading Model](#threading-model)
+6. [Color Management System](#color-management-system)
+7. [Storage Architecture](#storage-architecture)
+8. [Error Handling Strategy](#error-handling-strategy)
+9. [Recent Architectural Changes](#recent-architectural-changes)
 10. [Extension Points](#extension-points)
-11. [Design Patterns Used](#design-patterns-used)
 
 ## Overview
 
-The Toastmaster Timer App is a modular Python console application designed for timing speeches with visual feedback. The application follows a layered architecture with clear separation of concerns, making it maintainable, testable, and extensible.
+The Toastmaster Timer App is a modular Python console application designed for timing speeches with visual feedback. The application follows a clean layered architecture with the src/ directory structure, providing clear separation of concerns for maintainability, testability, and extensibility.
 
 ### Key Design Principles
 
@@ -25,6 +24,7 @@ The Toastmaster Timer App is a modular Python console application designed for t
 - **Dependency Inversion**: High-level modules don't depend on low-level modules
 - **Open/Closed Principle**: Open for extension, closed for modification
 - **Modularity**: Components can be developed and tested independently
+- **Dynamic Configuration**: Menus and displays automatically reflect configuration changes
 
 ## System Architecture
 
@@ -35,19 +35,20 @@ The Toastmaster Timer App is a modular Python console application designed for t
 │  main.py (Application Coordinator)                          │
 │  ├── User Input Handling                                    │
 │  ├── Menu Navigation                                        │
-│  └── Application Flow Control                               │
+│  ├── Component Integration                                  │
+│  └── Color Reset Management                                 │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                    Business Logic Layer                     │
 ├─────────────────────────────────────────────────────────────┤
-│  timer_engine.py (Timer Management)                         │
+│  src/timer_engine.py (Timer Management)                     │
 │  ├── TimerEngine (Core timing logic)                        │
 │  ├── TimerController (High-level control)                   │
 │  └── Threading Management                                   │
 │                                                             │
-│  speech_types.py (Domain Model)                             │
+│  src/speech_types.py (Domain Model)                         │
 │  ├── SpeechType Enum                                        │
 │  ├── TimerColor Enum                                        │
 │  └── SpeechConfig (Configuration management)                │
@@ -57,15 +58,16 @@ The Toastmaster Timer App is a modular Python console application designed for t
 ┌─────────────────────────────────────────────────────────────┐
 │                    Service Layer                            │
 ├─────────────────────────────────────────────────────────────┤
-│  display_manager.py (UI Services)                           │
+│  src/display_manager.py (UI Services)                       │
+│  ├── Dynamic Menu Generation                                │
+│  ├── Terminal Color Management                              │
 │  ├── Screen Management                                      │
-│  ├── Color Control                                          │
 │  └── Information Display                                    │
 │                                                             │
-│  record_manager.py (Data Services)                          │
-│  ├── Speech Record Management                               │
-│  ├── Persistence Operations                                 │
-│  └── Data Retrieval                                         │
+│  src/record_manager.py (Data Services)                      │
+│  ├── File-based Speech Record Management                    │
+│  ├── JSON Persistence Operations                            │
+│  └── Data Retrieval and Display                             │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -73,30 +75,49 @@ The Toastmaster Timer App is a modular Python console application designed for t
 │                    Infrastructure Layer                     │
 ├─────────────────────────────────────────────────────────────┤
 │  File System (speech_records.json)                          │
-│  Terminal/Console Interface                                 │
+│  Terminal/Console Interface (Windows PowerShell + cmd)      │
 │  Threading Primitives                                       │
 │  System Clock                                               │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Timer Execution & Display Architecture
+## Module Architecture
 
-### Timer Execution Flow
+### Project Structure
 
-The timer system operates on a sophisticated multi-threaded architecture that separates timing logic from display updates for precise and responsive operation.
-
-#### 1. **Timer Initialization**
-
-```python
-# User selects speech type → Timer starts
-TimerController.start_speech_timer(SpeechType.ICE_BREAKER)
-    ↓
-TimerEngine.start_timer(speech_type)
-    ↓
-Creates background daemon thread → _timer_worker()
+```
+ToastmasterTimerApp/
+├── main.py                    # Application entry point and coordinator
+├── src/                       # Core application modules
+│   ├── __init__.py           # Package initialization
+│   ├── speech_types.py       # Domain model (enums and configurations)
+│   ├── timer_engine.py       # Business logic (timer and threading)
+│   ├── display_manager.py    # Presentation layer (UI and color management)
+│   └── record_manager.py     # Data layer (file-based persistence)
+├── requirements.txt          # Dependencies (none for core app)
+├── speech_records.json      # Runtime-generated data file
+└── documentation files      # Architecture, README, etc.
 ```
 
-#### 2. **Background Timer Thread Operations**
+### Module Dependencies
+
+```
+main.py
+ ├── src.speech_types (SpeechType, SpeechConfig, TimerColor)
+ ├── src.timer_engine (TimerController)
+ ├── src.display_manager (DisplayManager)
+ └── src.record_manager (RecordManager)
+
+src/timer_engine.py
+ ├── src.speech_types (SpeechType, TimerColor, SpeechConfig)
+ └── src.display_manager (DisplayManager)
+
+src/display_manager.py
+ └── src.speech_types (SpeechType, TimerColor, SpeechConfig)
+
+src/record_manager.py
+ └── src.speech_types (SpeechType, SpeechConfig)
+```
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -673,6 +694,52 @@ User Action → Timer Start → Background Thread → Display Loop
 │ + get_records_count() → int │
 └─────────────────────────────────────────┘
 
+````
+
+## Color Management System
+
+### Color Persistence Fix
+
+One of the critical issues addressed in v2.1 was terminal color persistence, where the red background color would remain after timer sessions ended. This was resolved through a comprehensive color reset strategy.
+
+#### Problem Analysis
+- **Issue**: `os.system('color')` without parameters doesn't work in PowerShell
+- **Root Cause**: PowerShell doesn't recognize `color` command (cmd.exe specific)
+- **Impact**: Red terminal background persisted between timer sessions
+
+#### Solution Architecture
+```python
+# Fixed color management using cmd fallback
+def set_background_color(color: TimerColor):
+    if color == TimerColor.BLANK:
+        os.system('cmd /c "color 07"')  # Explicit default colors
+    elif color == TimerColor.RED:
+        os.system('cmd /c "color 04"')  # White text on red background
+    # ... other colors
+````
+
+#### Color Reset Strategy
+
+Color resets are implemented at multiple strategic points:
+
+1. **Application Startup**: `main.py::run()` method
+2. **Before Menu Display**: `main.py::_show_menu_and_handle_choice()`
+3. **After Speech Recording**: `main.py::_handle_timer_stop()`
+4. **Menu Display Method**: `DisplayManager::show_main_menu()`
+5. **Keyboard Interrupt**: `main.py::_handle_keyboard_interrupt()`
+
+### Color Command Architecture
+
+```
+PowerShell Terminal
+      ↓
+os.system('cmd /c "color 07"')
+      ↓
+Command Prompt subprocess
+      ↓
+Terminal color change
+      ↓
+Return to PowerShell with new colors
 ```
 
 ## Threading Model
@@ -749,7 +816,7 @@ User Action → Timer Start → Background Thread → Display Loop
 │ │
 └─────────────────┘
 
-````
+```
 
 ### Data Format
 
@@ -763,7 +830,7 @@ User Action → Timer Start → Background Thread → Display Loop
     "duration_formatted": "04:45"
   }
 ]
-````
+```
 
 ### Storage Characteristics
 
@@ -814,6 +881,44 @@ User Action → Timer Start → Background Thread → Display Loop
 │ to Main App     │    │ fully           │    │                 │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
+
+## Recent Architectural Changes (v2.1)
+
+### 1. **Directory Restructuring**
+
+- **Before**: All modules in root directory
+- **After**: Organized src/ directory structure
+- **Impact**: Better module organization and import management
+
+### 2. **Dynamic Menu Generation**
+
+- **Before**: Hard-coded menu items in DisplayManager
+- **After**: Menu dynamically generated from SpeechType enum and configurations
+- **Benefit**: Automatic consistency between configurations and display
+
+### 3. **Enhanced Color Management**
+
+- **Before**: Unreliable `os.system('color')` calls
+- **After**: Strategic color resets using `cmd /c "color XX"` at key application points
+- **Resolution**: Fixed color persistence issues across timer sessions
+
+### 4. **Import System Refactoring**
+
+- **Before**: Direct imports from root directory
+- **After**: Relative imports within src/ package structure
+- **Improvement**: Cleaner dependency management and module isolation
+
+### 5. **Test Timing Updates**
+
+- **Before**: 30-second intervals for test mode
+- **After**: 5-second intervals for faster testing and development
+- **Purpose**: More efficient debugging and demonstration
+
+### 6. **Speech Type Naming**
+
+- **Before**: `USUAL_SPEECH` enum value
+- **After**: `PREPARED` enum value (more accurate Toastmaster terminology)
+- **Alignment**: Better reflects actual Toastmaster speech categories
 
 ## Extension Points
 
